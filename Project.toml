@@ -1,6 +1,6 @@
 name = "Thunk"
 uuid = "490da00b-a60c-4ded-a4cf-df7cded56bfa"
-authors = ["Tyler Benster <lensman@tylerbenster.com> and contributors"]
+authors = ["Tyler Benster <thunk@tylerbenster.com> and contributors"]
 version = "0.1.0"
 
 [compat]
