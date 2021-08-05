@@ -38,6 +38,7 @@ abc = @thunk begin
     sum([a,b,c])
 end
 reify(abc)
+```
 
 ## Acknowledgements
 Thunks.jl is inspired by the Thunk implementation of Dagger.jl,
