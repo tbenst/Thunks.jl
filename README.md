@@ -43,6 +43,19 @@ end
 @assert reify(abc) == 6
 ```
 
+## Limitations
+Currently, naked indexing is not supported:
+```julia
+i = 10
+x = @thunk collect(1:i)[7:end]
+@assert isnothing(x)
+```
+
+This can be worked around by wrapping in a function
+```julia
+x = @thunk (()->collect(1:i)[7:10])()
+```
+
 ## Acknowledgements
 Thunks.jl is inspired by the Thunk implementation of the fantastic
 [Dagger.jl](https://github.com/JuliaParallel/Dagger.jl)
