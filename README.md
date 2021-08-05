@@ -9,7 +9,8 @@ Thunks.jl provides a simple implementation of a
 
 A thunk represents a computation that is not run until we `reify` it,
 meaning make "real". Once reified, the thunk caches the value of the
-computation.
+computation. The [core implementation](src/Thunks.jl) is only 25 LOC, so consider taking
+a peak.
 
 ## Installation
 ```
