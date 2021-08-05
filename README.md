@@ -9,7 +9,8 @@ Thunks.jl provides a simple implementation of a
 
 A thunk represents a computation that is not run until we `reify` it,
 meaning make "real". Once reified, the thunk caches the value of the
-computation.
+computation. The [core implementation](src/Thunks.jl) is only 25 LOC, so consider taking
+a peak.
 
 ## Installation
 ```
@@ -40,6 +41,21 @@ abc = @thunk begin
     sum([a,b,c])
 end
 @assert reify(abc) == 6
+```
+
+## Limitations
+Currently, naked indexing is not supported:
+```julia
+i = 10
+x = @thunk collect(1:i)[7:end]
+@assert isnothing(x)
+x = thunk(collect)(1:i)[7:end]
+ERROR: MethodError: no method matching lastindex(::Thunk)
+```
+
+This can be worked around by wrapping in a function
+```julia
+x = @thunk (()->collect(1:i)[7:end])()
 ```
 
 ## Acknowledgements
