@@ -17,8 +17,8 @@ mutable struct Thunk
     Thunk(f, args, kwargs) = new(f, args, kwargs, false, nothing)
 end
 
-function thunk(f; kwargs...)
-    (args...) -> Thunk(f, args, kwargs)
+function thunk(f)
+    (args...; kwargs...) -> Thunk(f, args, kwargs)
 end
 
 """
