@@ -8,7 +8,7 @@ Thunks.jl provides a simple implementation of a
 [Thunk](https://en.wikipedia.org/wiki/Thunk) for lazy computation.
 
 A thunk represents a computation that is not run until we `reify` it,
-meaning make "real". Once reified, the Thunk caches the value of the
+meaning make "real". Once reified, the thunk caches the value of the
 computation.
 
 ## Installation
