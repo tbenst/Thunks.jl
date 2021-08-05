@@ -1,4 +1,4 @@
-module Thunk
+module Thunks
 
 mutable struct Thunk
     f::Any # usually a Function, but could be any callable
@@ -6,7 +6,7 @@ mutable struct Thunk
     kwargs::Dict # not supported yet
     evaluated::Bool
     result::Any
-    TThunk(f, args, kwargs) = new(f, args, kwargs, false, nothing)
+    Thunk(f, args, kwargs) = new(f, args, kwargs, false, nothing)
 end
 
 function thunk(f; kwargs...)
@@ -18,7 +18,7 @@ end
 Walk through the thunk's arguments, recursively evaluating each one,
 and then evaluating the thunk's function with the evaluated arguments.
 """
-function reify(thunk::TThunk)
+function reify(thunk::Thunk)
     if thunk.evaluated
         return thunk.result
     else
@@ -83,7 +83,5 @@ end
 macro thunk(ex)
     thunkify(ex)
 end
-
-
 
 end

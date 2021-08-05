@@ -1,4 +1,4 @@
-using Thunk
+using Thunks
 using Test
 
 @testset "reify" begin
