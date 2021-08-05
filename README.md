@@ -55,7 +55,7 @@ ERROR: MethodError: no method matching lastindex(::Thunk)
 
 This can be worked around by wrapping in a function
 ```julia
-x = @thunk ((i)->collect(1:i)[7:end])()
+x = @thunk ((x)->collect(1:x)[7:end])(i)
 ```
 
 ## Acknowledgements
