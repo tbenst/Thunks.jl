@@ -1,8 +1,8 @@
 # Thunks.jl
 
-[![Build Status](https://github.com/tbenst/Thunk.jl/workflows/CI/badge.svg)](https://github.com/tbenst/Thunk.jl/actions)
-[![Coverage](https://codecov.io/gh/tbenst/Thunk.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/tbenst/Thunk.jl)
-[![Documentation](https://img.shields.io/badge/docs-master-blue.svg)](https://juliaparallel.github.io/Dagger.jl/dev)
+[![Documentation](https://img.shields.io/badge/docs-master-blue.svg)](https://tbenst.github.io/Thunks.jl/dev)
+[![Build Status](https://github.com/tbenst/Thunk.jl/workflows/CI/badge.svg)](https://github.com/tbenst/Thunks.jl/actions)
+[![Coverage](https://codecov.io/gh/tbenst/Thunk.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/tbenst/Thunks.jl)
 
 Thunks.jl provides a simple implementation of a
 [Thunk](https://en.wikipedia.org/wiki/Thunk) for lazy computation.
@@ -38,3 +38,8 @@ abc = @thunk begin
     sum([a,b,c])
 end
 reify(abc)
+
+## Acknowledgements
+Thunks.jl is inspired by the Thunk implementation of Dagger.jl,
+and is intended as a lightweight alternative that does not tie 
+into a scheduler.
