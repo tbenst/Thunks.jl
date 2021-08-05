@@ -1,5 +1,5 @@
 module Thunks
-""""
+"""
     Thunk(function, args, kwargs)
 
 Type that represents a thunk. Useful fields inclue:
