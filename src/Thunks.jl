@@ -1,9 +1,17 @@
 module Thunks
+""""
+    Thunk(function, args, kwargs)
 
+Type that represents a thunk. Useful fields inclue:
+```
+    evaluated::Bool
+    result::Any
+```
+"""
 mutable struct Thunk
     f::Any # usually a Function, but could be any callable
     args::Tuple
-    kwargs::Dict # not supported yet
+    kwargs::Dict
     evaluated::Bool
     result::Any
     Thunk(f, args, kwargs) = new(f, args, kwargs, false, nothing)
@@ -17,6 +25,7 @@ end
 
 """
     reify(thunk::Thunk)
+    reify(value::Any)
 
 Reify a thunk into a value.
 
@@ -39,7 +48,11 @@ function reify(value)
     value
 end
 
-"Turn expression into a thunk. Supports :call, :(=), :block."
+"""
+Turn expression into a thunk. Supports :call, :(=), :block.
+
+Not intended for public usage.
+"""
 function thunkify(ex)
     if ex.head == :block
         t = thunkify_block(ex)
@@ -85,6 +98,21 @@ function thunkify_eq(ex)
     :($l = $r)
 end
 
+"""
+    @thunk
+
+Macro for turning an expression into a thunk. Supports lines like:
+```julia
+@thunk x+y
+@thunk x = f(y)
+abc = @thunk begin
+    a = 1
+    b = 2
+    c = 3
+    sum([a,b,c])
+end
+```
+"""
 macro thunk(ex)
     thunkify(ex)
 end
