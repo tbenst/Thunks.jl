@@ -21,26 +21,29 @@ whereas the eager equivalent would take a minute.
 ```julia
 w = thunk(sleep)(60)
 x = thunk(identity)(2)
-y = thunk(identity)(3)
+y = @thunk identity(3)
+@thunk yy = identity(3)
 z = thunk(+)(x, y)
-@assert z.evaluated = false
+@assert z.evaluated == false
 @assert reify(z) == 5
-@assert z.evaluated = true
-@assert w.evaluated = false
+@assert z.evaluated == true
+@assert w.evaluated == false
 ```
 
-A macro is also provided:
+A macro is also provided for convenience:
 ```julia
 abc = @thunk begin
-    a = 1
-    b = 2
-    c = 4
+    w = sleep(60)
+    a = 2
+    b = 3
+    c = 1
     sum([a,b,c])
 end
-reify(abc)
+@assert reify(abc) == 6
 ```
 
 ## Acknowledgements
-Thunks.jl is inspired by the Thunk implementation of Dagger.jl,
-and is intended as a lightweight alternative that does not tie 
-into a scheduler.
+Thunks.jl is inspired by the Thunk implementation of the fantastic
+[Dagger.jl](https://github.com/JuliaParallel/Dagger.jl)
+and is intended as a lightweight, more performant alternative
+without the scheduling capabilities.
