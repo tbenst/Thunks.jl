@@ -49,6 +49,8 @@ Currently, naked indexing is not supported:
 i = 10
 x = @thunk collect(1:i)[7:end]
 @assert isnothing(x)
+x = thunk(collect)(1:i)[7:end]
+ERROR: MethodError: no method matching lastindex(::Thunk)
 ```
 
 This can be worked around by wrapping in a function
