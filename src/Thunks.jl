@@ -21,8 +21,6 @@ function thunk(f; kwargs...)
     (args...) -> Thunk(f, args, kwargs)
 end
 
-
-
 """
     reify(thunk::Thunk)
     reify(value::Any)
@@ -49,6 +47,8 @@ end
 function reify(value)
     value
 end
+
+#### remaining code in this module pertains to the @thunk macro
 
 """
 Turn expression into a thunk. Supports :call, :(=), :block.
