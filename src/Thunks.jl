@@ -10,10 +10,10 @@ Type that represents a thunk. Useful fields inclue:
 """
 mutable struct Thunk
     f::Any # usually a Function, but could be any callable
-    args::Tuple
-    kwargs::Dict
-    evaluated::Bool
-    result::Any
+    args::Tuple # args will be passed to f
+    kwargs::Dict # kwargs will be passed to f
+    evaluated::Bool # false until computed, then true
+    result::Any # cache result once computed
     Thunk(f, args, kwargs) = new(f, args, kwargs, false, nothing)
 end
 
@@ -29,7 +29,9 @@ end
 
 Reify a thunk into a value.
 
-Walk through the thunk's arguments, recursively evaluating each one,
+In other words, compute the value of the expression.
+
+We walk through the thunk's arguments and keywords, recursively evaluating each one,
 and then evaluating the thunk's function with the evaluated arguments.
 """
 function reify(thunk::Thunk)
