@@ -63,7 +63,7 @@ function thunkify(ex)
 end
 
 function thunkify_block(ex)
-    @assert ex.head == :block
+    @assert ex.head == :block "unexpected head ($(ex.head) != :block) for: $ex"
     args = map(_thunkify, ex.args)
     Expr(:block, args...)
 end
@@ -82,13 +82,13 @@ function _thunkify(ex)
 end
 
 function thunkify_call(ex)
-    @assert ex.head == :call
+    @assert ex.head == :call "unexpected head ($(ex.head) != :call) for: $ex"
     f = ex.args[1]
     :(thunk($f)($(ex.args[2:end]...)))
 end
 
 function thunkify_eq(ex)
-    @assert ex.head == :(=)
+    @assert ex.head == :(=) "unexpected head ($(ex.head) != :(=)) for: $ex"
     l = ex.args[1]
     if typeof(ex.args[2]) == Expr
         r = thunkify_call(ex.args[2])
