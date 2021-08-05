@@ -13,7 +13,12 @@ function thunk(f; kwargs...)
     (args...) -> Thunk(f, args, kwargs)
 end
 
-"""Reify a thunk into a value.
+
+
+"""
+    reify(thunk::Thunk)
+
+Reify a thunk into a value.
 
 Walk through the thunk's arguments, recursively evaluating each one,
 and then evaluating the thunk's function with the evaluated arguments.
@@ -84,4 +89,5 @@ macro thunk(ex)
     thunkify(ex)
 end
 
+export Thunk, reify, thunk, @thunk
 end
