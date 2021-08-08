@@ -1,7 +1,7 @@
 name = "Thunks"
 uuid = "490da00b-a60c-4ded-a4cf-df7cded56bfa"
 authors = ["Tyler Benster <thunk@tylerbenster.com> and contributors"]
-version = "0.1.2"
+version = "0.2.0"
 
 [compat]
 julia = "1"
