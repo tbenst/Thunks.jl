@@ -17,7 +17,7 @@ more.
 
 ## Installation
 ```
-julia> ] add https://github.com/tbenst/Thunks.jl
+julia> ] add Thunks
 ```
 ## Usage
 Note that the below example will execute nearly instantly due to laziness,
