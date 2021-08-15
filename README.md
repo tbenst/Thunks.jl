@@ -50,7 +50,6 @@ More usage examples can be seen in the [tests](test/runtests.jl).
 
 ## Limitations
 Currently, using `@thunk` on nested blocks is not supported.
-```
 
 ## Acknowledgements
 Thunks.jl is inspired by the Thunk implementation of the fantastic
