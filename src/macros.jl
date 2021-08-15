@@ -1,5 +1,6 @@
 
-"Walk an AST and find all unique symbols."
+"""Walk an AST and find all unique symbols.
+"""
 function find_symbols_in_ast(ex)
     # accumulate sub-expressions for recursion
     expressions = [ex]
@@ -23,7 +24,68 @@ function find_symbols_in_ast(ex)
     return unique(symbols)
 end
 
-"Helper function following `cons` and `nil` pattern from Lisp."
+"""
+We find all "assigned symbols", as in, everything except:
+- anonymous functions :((x,y,z) -> x*x).args[1]
+- generators :((x for x in 1:10))
+- ... others that we should catch...?
+"""
+function find_assigned_symbols_in_ast(ex)
+    # accumulate sub-expressions for recursion
+    # println("===== intitial call ========")
+    expressions = [ex]
+    # paired list of symbols to ignore per expression
+    ignore_sym_per_ex = [Vector{Symbol}()]
+
+    # accumulate found symbols
+    symbols = Vector{Symbol}()
+
+    while length(expressions) > 0
+        # @show expressions
+        # @show ignore_sym_per_ex
+        # @show symbols
+        ex = pop!(expressions)
+        ignore_symbols = pop!(ignore_sym_per_ex)
+        if (typeof(ex) == Expr)
+            if ex.head == :->
+                # anonymous function, so need to ignore unassigned symbols
+                ignore_symbols = vcat(ignore_symbols, find_symbols_in_ast(ex.args[1]))
+                first, rest = _find_symbols_in_ast(ex.args[2])
+            elseif ex.head == :generator
+                # right hand of generator, first arg is the assignment
+                ignore_symbols = vcat(ignore_symbols, ex.args[2].args[1])
+                first, rest = _find_symbols_in_ast(ex)
+            else
+                first, rest = _find_symbols_in_ast(ex)
+            end
+        else
+            first, rest = _find_symbols_in_ast(ex)
+        end
+
+        # 0 or 1 of next if blocks will be executed
+
+        if typeof(first) == Symbol
+            # got value, no more recursion
+            if (~)(first in ignore_symbols)
+                push!(symbols, first)
+            end
+        end
+
+        if ~isnothing(rest)
+            # recur
+            expressions = vcat(expressions, rest)
+            ignore_sym_per_ex = vcat(ignore_sym_per_ex,
+                repeat([ignore_symbols], length(rest)))
+        end
+    end
+    symbols
+end
+
+"""
+Return either (nothing, List[Expr]), (Symbol, nothing), or (nothing, nothing).
+
+Helper function following `cons` and `nil` pattern from Lisp.
+"""
 function _find_symbols_in_ast(ex)
     if typeof(ex) == Expr
         head, args = ex.head, ex.args
@@ -35,14 +97,23 @@ function _find_symbols_in_ast(ex)
     end
 end
 
-isthunk(x) = typeof(x) == Thunk
-
 "Safely evaluate symbols that may not have an assignment."
 function safe_eval_isthunk(ex)
     try
-        return isthunk(eval(ex))
+        # return isthunk(eval(ex))
+        typeof(@eval $ex) == Thunk
     catch
-        return false
+        false
+    end
+end
+
+macro safe_eval_isthunk(ex)
+    quote
+        try
+            return typeof(@eval $ex) == Thunk
+        catch
+            return false
+        end
     end
 end
 
@@ -119,6 +190,34 @@ abc = @thunk begin
 end
 ```
 """
+# macro thunk(ex)
+#     thunkify(ex)
+# end
+
+"""Creat thunk from arbitrary Julia expressions.
+
+This doesn't work as for eg:
+
+```
+julia> @thunk y = maybe_add1(2; add1=false)
+new = :((((add1, maybe_add1, y)->begin
+                 #= /home/tyler/.julia/dev/Thunks/src/macros.jl:135 =#
+                 y = maybe_add1(2; add1 = false)
+             end))(add1, maybe_add1, y))
+```
+since add1 is not defined
+"""
 macro thunk(ex)
-    thunkify(ex)
+    # symbols = find_symbols_in_ast(ex)
+    symbols = find_thunks_in_ast(ex)
+    vars = "("
+    for sym in symbols
+        vars *= "$sym,"
+    end
+    vars *= ")"
+    vars = Meta.parse(vars)
+    wrapped = :($vars -> $ex)
+    new = Expr(:call, wrapped, symbols...)
+    @show new
+    new
 end

@@ -5,5 +5,5 @@ include("macros.jl")
 #### remaining code in this module pertains to the @thunk macro
 
 
-export Thunk, reify, thunk, @thunk
+export Thunk, reify, thunk, @thunk, @lazy
 end
