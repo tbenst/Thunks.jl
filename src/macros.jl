@@ -122,9 +122,7 @@ end
 
 
 """
-Turn expression into a thunk. Supports :call, :(=), :block.
-
-Not intended for public usage.
+Turn expression into a thunk. Not intended for public usage.
 """
 function thunkify(ex)
     if ex.head == :block
@@ -180,21 +178,21 @@ function _thunkify(ex)
 end
 
 """
-    @thunk
+    @lazy <Expr>
 
-Macro for turning an expression into a thunk. Supports lines like:
+Lazy evaluation of arbitrary expressions.
 ```julia
-@thunk x+y
-@thunk x = f(y)
-abc = @thunk begin
+@lazy x+y
+@lazy x = f(y)
+@lazy begin
     a = 1
     b = 2
     c = 3
-    sum([a,b,c])
+    abc = sum([a,b,c])
 end
 ```
 """
-macro thunk(ex)
+macro lazy(ex)
     new = thunkify(ex)
     esc(new)
 end

@@ -58,14 +58,14 @@ end
 
 
 # quick test
-# using Thunks; begin x=y=z=1; a = @thunk sum([x,y,z]); reify(a); end
+# using Thunks; begin x=y=z=1; a = @lazy sum([x,y,z]); reify(a); end
 
-@testset "@thunk" begin
+@testset "@lazy" begin
     a = b = c = 2
-    t = @thunk sum([a,b,c])
+    t = @lazy sum([a,b,c])
     @test typeof(t) == Thunk
     @test reify(t) == 6
-    @thunk begin
+    @lazy begin
         x = 1
         b = 2
         z = 4
@@ -82,31 +82,31 @@ end
 @testset "dot broadcast" begin
     a = ones(5)
 
-    @thunk b = a .+ a
+    @lazy b = a .+ a
     @test all(reify(b) .== (a .*2))
     
     add1(x) = x + 1
-    @thunk c = add1.(a)
+    @lazy c = add1.(a)
     @test all(reify(c) .== (a .+ 1))
 end
 
 test() = (1,2,3)
 
 @testset "indexing" begin
-    @thunk x = test()[1]
+    @lazy x = test()[1]
     @test reify(x) == 1
-    @thunk y = test()
+    @lazy y = test()
     y1 = y[1]
     @test reify(y1) == 1
-    i = @thunk identity(10)
-    x = @thunk collect(1:i)[7:end]
+    i = @lazy identity(10)
+    x = @lazy collect(1:i)[7:end]
     @test all(reify(x) .== [7,8,9,10])
 end
 
 @testset "if" begin
-        @thunk x = true ? 1 : 0
+        @lazy x = true ? 1 : 0
         @test reify(x) == 1
-        y = @thunk if true
+        y = @lazy if true
             1
         else
             0
@@ -115,9 +115,9 @@ end
 end
 
 @testset "return arity" begin
-    @thunk x,y,z = test()
+    @lazy x,y,z = test()
     @test map(reify,(x,y,z)) == (1,2,3)
-    @thunk (a,b,c) = test()
+    @lazy (a,b,c) = test()
     @test map(reify,(x,y,z)) == (1,2,3)
 end
 
@@ -128,15 +128,15 @@ end
 
 
 @testset "kwargs" begin
-    @thunk y = maybe_add1(2; add1=false)
+    @lazy y = maybe_add1(2; add1=false)
     @test reify(y)==4
-    @thunk yy = maybe_add1(2; add1=true)
+    @lazy yy = maybe_add1(2; add1=true)
     @test reify(yy)==6
 end
 
 @testset "comprehension Expr" begin
-    a = @thunk identity(6)
-    z = @thunk [x[1:2] for x in repeat([repeat([a], 3)],3)]
+    a = @lazy identity(6)
+    z = @lazy [x[1:2] for x in repeat([repeat([a], 3)],3)]
     @test all(sum(reify(z)) .== [18, 18])
 end
 
