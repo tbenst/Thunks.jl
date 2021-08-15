@@ -9,8 +9,11 @@ Thunks.jl provides a simple implementation of a
 
 A thunk represents a computation that is not run until we `reify` it,
 meaning make "real". Once reified, the thunk caches the value of the
-computation. The [core implementation](src/Thunks.jl) is only 25 LOC, so consider taking
-a peak.
+computation. The [core implementation](src/Thunks.jl) is only 25 LOC, so
+consider taking a peak. Most of the complexity lies in the `@thunk` macro,
+which aims to support lazy evaluation of arbitrary Julia expressions, including
+dot broadcasting, indexing, keyword arguments, if blocks, comprehensions, and
+more.
 
 ## Installation
 ```
@@ -43,19 +46,10 @@ end
 @assert reify(abc) == 6
 ```
 
-## Limitations
-Currently, naked indexing is not supported:
-```julia
-i = 10
-x = @thunk collect(1:i)[7:end]
-@assert isnothing(x)
-x = thunk(collect)(1:i)[7:end]
-ERROR: MethodError: no method matching lastindex(::Thunk)
-```
+More usage examples can be seen in the [tests](test/runtests.jl).
 
-This can be worked around by wrapping in a function
-```julia
-x = @thunk ((x)->collect(1:x)[7:end])(i)
+## Limitations
+Currently, using `@thunk` on nested blocks is not supported.
 ```
 
 ## Acknowledgements

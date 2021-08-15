@@ -1,20 +1,25 @@
 """
     Thunk(function, args, kwargs)
 
-Type that represents a thunk. Useful fields inclue:
-```
-    evaluated::Bool
-    result::Any
-```
+Type that represents a thunk. Only `evaluated` is a public field.
+Use `reify` to evaluate.
 """
 mutable struct Thunk
     f::Any # usually a Function, but could be any callable
-    args::Tuple # args will be passed to f
-    kwargs::Dict # kwargs will be passed to f
+    # args will be passed to f. Needs to support ... (splat), eg Array or Tuple
+    args::Any
+    kwargs::Dict # kwargs will be passed to f, cleared after evaluation
     evaluated::Bool # false until computed, then true
     result::Any # cache result once computed
+    Thunk(f, args) = new(f, args, Dict(), false, nothing)
     Thunk(f, args, kwargs) = new(f, args, kwargs, false, nothing)
 end
+
+function Base.getindex(self::Thunk, index)
+    thunk(getindex)(self, index)
+end
+
+Base.iterate(t::Thunk, state=1) = (t[state], state+1)
 
 function thunk(f)
     (args...; kwargs...) -> Thunk(f, args, kwargs)
@@ -39,6 +44,9 @@ function reify(thunk::Thunk)
         kwargs = Dict(k => reify(v) for (k,v) in thunk.kwargs)
         thunk.result = thunk.f(args...; kwargs...)
         thunk.evaluated = true
+        # clear to allow garbage collection
+        thunk.args = []
+        thunk.kwargs = Dict()
         return thunk.result
     end
 end

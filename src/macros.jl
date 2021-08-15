@@ -24,6 +24,29 @@ function find_symbols_in_ast(ex)
     return unique(symbols)
 end
 
+RESERVED = [
+    :baremodule, :begin, :break, :catch, :const, :continue, :do, :else,
+    :elseif, :end, :export, :false, :finally, :for, :function, :global, :if,
+    :import, :let, :local, :macro, :module, :quote, :return, :struct, :true,
+    :try, :using, :while
+]
+"Return true if symbol could be assigned to a Thunk."
+function maybe_thunk(symbol, ignore_symbols)
+    # println("maybe_thunk: $symbol")
+    if symbol in RESERVED
+        ret = false
+    elseif symbol in ignore_symbols
+        ret = false
+    elseif string(symbol)[1] == '.'
+        # ie .+ is not a possible thunk
+        ret = false
+    else
+        ret = true
+    end
+    # println("maybe_thunk: $symbol, $ret")
+    ret
+end
+
 """
 We find all "assigned symbols", as in, everything except:
 - anonymous functions :((x,y,z) -> x*x).args[1]
@@ -66,7 +89,7 @@ function find_assigned_symbols_in_ast(ex)
 
         if typeof(first) == Symbol
             # got value, no more recursion
-            if (~)(first in ignore_symbols)
+            if maybe_thunk(first, ignore_symbols)
                 push!(symbols, first)
             end
         end
@@ -78,7 +101,7 @@ function find_assigned_symbols_in_ast(ex)
                 repeat([ignore_symbols], length(rest)))
         end
     end
-    symbols
+    unique(symbols)
 end
 
 """
@@ -97,31 +120,6 @@ function _find_symbols_in_ast(ex)
     end
 end
 
-"Safely evaluate symbols that may not have an assignment."
-function safe_eval_isthunk(ex)
-    try
-        # return isthunk(eval(ex))
-        typeof(@eval $ex) == Thunk
-    catch
-        false
-    end
-end
-
-macro safe_eval_isthunk(ex)
-    quote
-        try
-            return typeof(@eval $ex) == Thunk
-        catch
-            return false
-        end
-    end
-end
-
-"Return array of symbols that are assigned to a Thunk."
-function find_thunks_in_ast(ex)
-    symbols = find_symbols_in_ast(ex)
-    filter(safe_eval_isthunk, symbols)
-end
 
 
 """
@@ -135,7 +133,7 @@ function thunkify(ex)
     else
         t = _thunkify(ex)
     end
-    esc(t)
+    t
 end
 
 function thunkify_block(ex)
@@ -144,36 +142,50 @@ function thunkify_block(ex)
     Expr(:block, args...)
 end
 
-function _thunkify(ex)
-    if typeof(ex) == Expr
-        if ex.head == :call
-            thunkify_call(ex)
-        elseif ex.head == :(=)
-            thunkify_eq(ex)
-        end
-    else
-        # e.g. for LineNumberNode in a block
-        ex
-    end
-end
 
-function thunkify_call(ex)
-    @assert ex.head == :call "unexpected head ($(ex.head) != :call) for: $ex"
-    f = ex.args[1]
-    :(thunk($f)($(ex.args[2:end]...)))
-end
+# function thunkify_call(ex)
+#     @assert ex.head == :call "unexpected head ($(ex.head) != :call) for: $ex"
+#     f = ex.args[1]
+#     :(thunk($f)($(ex.args[2:end]...)))
+# end
 
-function thunkify_eq(ex)
+function _thunkify_eq(ex)
     @assert ex.head == :(=) "unexpected head ($(ex.head) != :(=)) for: $ex"
     l = ex.args[1]
     if typeof(ex.args[2]) == Expr
-        r = thunkify_call(ex.args[2])
+        r = thunkify(ex.args[2])
     else
         r = ex.args[2]
     end
     :($l = $r)
 end
 
+"Wrap expression in anonymous function, with each assigned symbol as an arg."
+function _thunkify_expr(ex)
+    symbols = find_assigned_symbols_in_ast(ex)
+    vars = "("
+    for sym in symbols
+        vars *= "$sym,"
+    end
+    vars *= ")"
+    vars = Meta.parse(vars)
+    wrapped = :($vars -> $ex)
+    new = Expr(:call, Thunk, wrapped, vars)
+    new
+end
+
+function _thunkify(ex)
+    if typeof(ex) == Expr
+        if ex.head == :(=)
+            _thunkify_eq(ex)
+        else
+            _thunkify_expr(ex)
+        end
+    else
+        # e.g. for LineNumberNode in a block
+        ex
+    end
+end
 
 """
     @thunk
@@ -208,16 +220,8 @@ new = :((((add1, maybe_add1, y)->begin
 since add1 is not defined
 """
 macro thunk(ex)
-    # symbols = find_symbols_in_ast(ex)
-    symbols = find_thunks_in_ast(ex)
-    vars = "("
-    for sym in symbols
-        vars *= "$sym,"
-    end
-    vars *= ")"
-    vars = Meta.parse(vars)
-    wrapped = :($vars -> $ex)
-    new = Expr(:call, wrapped, symbols...)
+    println("====== thunking ======")
+    new = thunkify(ex)
     @show new
-    new
+    esc(new)
 end
