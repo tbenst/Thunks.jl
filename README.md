@@ -63,9 +63,16 @@ end
 ```julia
 test() = (1,2,3)
 @lazy begin
-    i = identity(10)
-    
+    a = true ? (()-> ones(5))() : zeros(5)
+    b = a .+ a
+    c = collect(1:b[3]*5)[7:end]
+    d = identity(6)
+    e = [x[1:2] for x in repeat([repeat([d], 3)],3)]
 end
+@assert reify(c) == [7,8,9,10]
+@assert e.evaluated == false
+@assert all(sum(reify(e)) .== [18, 18])
+@assert e.evaluated == true
 ```
 
 More usage examples can be seen in the [tests](test/runtests.jl).
