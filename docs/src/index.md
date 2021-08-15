@@ -11,4 +11,5 @@ Documentation for [Thunks](https://github.com/tbenst/Thunks.jl).
 
 ```@autodocs
 Modules = [Thunks]
+Order   = [:function, :type, :macro]
 ```
