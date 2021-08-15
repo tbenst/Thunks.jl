@@ -11,7 +11,7 @@ a lazy evaluation strategy.
 
 A thunk represents a computation that is not run until we `reify` it,
 meaning make "real". Once reified, the thunk caches the value of the
-computation. The [core implementation](src/Thunks.jl) is only 30 LOC, so
+computation. The [core implementation](src/core.jl) is only 30 LOC, so
 consider taking a peak. Most of the complexity lies in the `@lazy` macro,
 which aims to support lazy evaluation of arbitrary Julia expressions, including
 dot broadcasting, indexing, keyword arguments, if blocks, comprehensions, and
