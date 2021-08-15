@@ -15,7 +15,8 @@ computation. The [core implementation](src/core.jl) is only 30 LOC, so
 consider taking a peak. Most of the complexity lies in the `@lazy` macro,
 which supports lazy evaluation of nearly any Julia expression, including
 dot broadcasting, indexing, keyword arguments, if blocks, comprehensions, and
-more.
+more. Thunks can be composed, meaning that you can transform existing julia
+code for lazy evaluation just by prepending `@lazy`.
 
 The implementation approximates laziness in pure functional languages
 like Haskell: a memoizing [call-by-need](https://en.wikipedia.org/wiki/Lazy_evaluation).
