@@ -6,7 +6,7 @@
 
 Thunks.jl provides a simple implementation of a
 [Thunk](https://en.wikipedia.org/wiki/Thunk) for lazy computation, and a 
-sophisticated macro `@lazy` that rewrites arbitrary Julia expressions for a 
+sophisticated macro `@lazy` that rewrites arbitrary Julia expressions for 
 a lazy evaluation strategy.
 
 A thunk represents a computation that is not run until we `reify` it,
