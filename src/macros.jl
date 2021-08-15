@@ -121,7 +121,6 @@ function _find_symbols_in_ast(ex)
 end
 
 
-
 """
 Turn expression into a thunk. Supports :call, :(=), :block.
 
@@ -141,13 +140,6 @@ function thunkify_block(ex)
     args = map(_thunkify, ex.args)
     Expr(:block, args...)
 end
-
-
-# function thunkify_call(ex)
-#     @assert ex.head == :call "unexpected head ($(ex.head) != :call) for: $ex"
-#     f = ex.args[1]
-#     :(thunk($f)($(ex.args[2:end]...)))
-# end
 
 function _thunkify_eq(ex)
     @assert ex.head == :(=) "unexpected head ($(ex.head) != :(=)) for: $ex"
@@ -202,26 +194,7 @@ abc = @thunk begin
 end
 ```
 """
-# macro thunk(ex)
-#     thunkify(ex)
-# end
-
-"""Creat thunk from arbitrary Julia expressions.
-
-This doesn't work as for eg:
-
-```
-julia> @thunk y = maybe_add1(2; add1=false)
-new = :((((add1, maybe_add1, y)->begin
-                 #= /home/tyler/.julia/dev/Thunks/src/macros.jl:135 =#
-                 y = maybe_add1(2; add1 = false)
-             end))(add1, maybe_add1, y))
-```
-since add1 is not defined
-"""
 macro thunk(ex)
-    println("====== thunking ======")
     new = thunkify(ex)
-    @show new
     esc(new)
 end
