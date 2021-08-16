@@ -178,6 +178,8 @@ function _thunkify_expr(ex, type=Thunk)
     elseif type == Unevaluated
         vars = :(() -> $vars)
         Expr(:call, Unevaluated, wrapped, vars)
+    elseif type == Reversible
+        Expr(:call, Reversible, wrapped, vars)
     else
         error("_thunkify_expr not implemented for type: $type")
     end
@@ -247,5 +249,34 @@ reify(abc)
 """
 macro noeval(ex)
     new = thunkify(ex, Unevaluated)
+    esc(new)
+end
+
+"""
+    @reversible <Expr>
+
+Lazy evaluation of arbitrary expressions that allows for computation to be
+undone.
+
+```jldoctest
+@reversible begin
+    a = 1
+    b = 2
+    c = 3
+    abc = sum([a,b,c])
+end
+@assert abc.evaluated == false
+reify(abc)
+@assert abc.evaluated == true
+undo(abc)
+@assert abc.evaluated == false
+reify(abc)
+@assert abc.evaluated == true
+# output
+2
+```
+"""
+macro reversible(ex)
+    new = thunkify(ex, Reversible)
     esc(new)
 end

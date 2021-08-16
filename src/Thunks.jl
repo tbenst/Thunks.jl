@@ -3,5 +3,6 @@ module Thunks
 include("core.jl")
 include("macros.jl")
 
-export Thunk, Unevaluated, Think, reify, thunk, @lazy, @noeval
+export Thunk, Unevaluated, Reversible, Think, reify, thunk, @lazy, @noeval,
+    @reversible, undo
 end

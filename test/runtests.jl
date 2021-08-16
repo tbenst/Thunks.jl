@@ -165,4 +165,21 @@ end
     @test reify(c) == -1
 end
 
+@testset "@reversible" begin
+    f() = 3
+    @reversible begin
+        a = f()
+        b = identity(2)
+        c = a + b
+    end
+    @test c.evaluated == false
+    @test reify(c) == 5
+    @test c.evaluated == true
+    undo.([a,b,c])
+    @test c.evaluated == false
+    f() = 1
+    @test reify(c) == 3
+    @test c.evaluated == true
+end
+
 end

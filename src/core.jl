@@ -33,6 +33,23 @@ mutable struct Unevaluated <: Think
     Unevaluated(f, args, kwargs) = new(f, args, kwargs, false, nothing)
 end
 
+"""
+A Thunk that can "undo" code evaluation. Does not clear f or args.
+
+Useful for interactive coding. ie if you revise a function definition,
+can undo & reify the thunk again.
+"""
+mutable struct Reversible <: Think
+    f::Any # usually a Function, but could be any callable
+    # args will be passed to f. Needs to support ... (splat), eg Array or Tuple
+    args::Any
+    kwargs::Dict # kwargs will be passed to f, cleared after evaluation
+    evaluated::Bool # false until computed, then true
+    result::Any # cache result once computed
+    Reversible(f, args) = new(f, args, Dict(), false, nothing)
+    Reversible(f, args, kwargs) = new(f, args, kwargs, false, nothing)
+end
+
 function Base.getindex(self::Think, index)
     thunk(getindex)(self, index)
 end
@@ -83,6 +100,24 @@ function eval_thunk(thunk, f, args, kwargs)
         return thunk.result
 end
 
+function reify(thunk::Reversible)
+    if thunk.evaluated
+        return thunk.result
+    else
+        args = [reify(x) for x in thunk.args]
+        kwargs = Dict(k => reify(v) for (k,v) in thunk.kwargs)
+        thunk.result = thunk.f(args...; kwargs...)
+        thunk.evaluated = true
+        return thunk.result
+    end
+end
+
 function reify(value)
     value
+end
+
+"Undo function call (non-recursively)"
+function undo(thunk::Reversible)
+    thunk.result = nothing
+    thunk.evaluated = false
 end
