@@ -85,7 +85,6 @@ end
     @lazy b = a .+ a
     @test all(reify(b) .== (a .*2))
     
-    add1(x) = x + 1
     @lazy c = add1.(a)
     @test all(reify(c) .== (a .+ 1))
 end
@@ -138,6 +137,28 @@ end
     a = @lazy identity(6)
     z = @lazy [x[1:2] for x in repeat([repeat([a], 3)],3)]
     @test all(sum(reify(z)) .== [18, 18])
+end
+
+@testset "Unevaluated" begin
+    # will not error
+    not_used = Unevaluated(+, ()->(not_defined,1))
+    a = Unevaluated(identity, ()->1)
+    b = Unevaluated(identity, ()->2)
+    c = Unevaluated(+, ()->(a,b))
+    @test reify(c) == 3
+end
+
+@testset "@noeval" begin
+    # will not error
+    @noeval begin
+        not_used = not_defined + 1
+        a = identity(1)
+        b = identity(2)
+        c = a + b
+    end
+    # behavior may be unexpected if referential transparency does not hold.
+    b = -2
+    @test reify(c) == -1
 end
 
 end

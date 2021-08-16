@@ -122,36 +122,43 @@ end
 
 
 """
-Turn expression into a thunk. Not intended for public usage.
+Rewrite expression for lazy evaluation using thunks.
+Not intended for public usage.
 """
-function thunkify(ex)
+function thunkify(ex, type=Thunk)
     if ex.head == :block
-        t = thunkify_block(ex)
+        t = thunkify_block(ex, type)
     else
-        t = _thunkify(ex)
+        t = _thunkify(ex, type)
     end
     t
 end
 
-function thunkify_block(ex)
+"Rewrite a begin...end block to be lazy."
+function thunkify_block(ex, type=Thunk)
     @assert ex.head == :block "unexpected head ($(ex.head) != :block) for: $ex"
-    args = map(_thunkify, ex.args)
+    args = map(t -> _thunkify(t,type), ex.args)
     Expr(:block, args...)
 end
 
-function _thunkify_eq(ex)
+"Assign left of `=` to a thunk."
+function _thunkify_eq(ex, type=Thunk)
     @assert ex.head == :(=) "unexpected head ($(ex.head) != :(=)) for: $ex"
     l = ex.args[1]
     if typeof(ex.args[2]) == Expr
-        r = thunkify(ex.args[2])
+        # recursion...
+        r = thunkify(ex.args[2], type)
     else
         r = ex.args[2]
     end
     :($l = $r)
 end
 
-"Wrap expression in anonymous function, with each assigned symbol as an arg."
-function _thunkify_expr(ex)
+"""Actually create the Thunk struct.
+
+Wrap expression in anonymous function, with each assigned symbol as an arg.
+"""
+function _thunkify_expr(ex, type=Thunk)
     symbols = find_assigned_symbols_in_ast(ex)
     vars = "("
     for sym in symbols
@@ -160,16 +167,23 @@ function _thunkify_expr(ex)
     vars *= ")"
     vars = Meta.parse(vars)
     wrapped = :($vars -> $ex)
-    new = Expr(:call, Thunk, wrapped, vars)
-    new
+    if type == Thunk
+        Expr(:call, Thunk, wrapped, vars)
+    elseif type == Unevaluated
+        vars = :(() -> $vars)
+        Expr(:call, Unevaluated, wrapped, vars)
+    else
+        error("_thunkify_expr not implemented for type: $type")
+    end
 end
 
-function _thunkify(ex)
+"Helper function to dispatch based on Expr head."
+function _thunkify(ex, type=Thunk)
     if typeof(ex) == Expr
         if ex.head == :(=)
-            _thunkify_eq(ex)
+            _thunkify_eq(ex, type)
         else
-            _thunkify_expr(ex)
+            _thunkify_expr(ex, type)
         end
     else
         # e.g. for LineNumberNode in a block
@@ -190,9 +204,42 @@ Lazy evaluation of arbitrary expressions.
     c = 3
     abc = sum([a,b,c])
 end
+reify(abc)
+# output
+6
 ```
 """
 macro lazy(ex)
-    new = thunkify(ex)
+    new = thunkify(ex, Thunk)
+    esc(new)
+end
+
+
+"""
+    @noeval <Expr>
+
+Lazy evaluation of arbitrary expressions that does not check for variable
+definition. This is safe to use if the assumption of referential transprency
+holds, and should be used with extreme caution otherwise, e.g. if referenced
+variables might be mutated. Note that evaluation occurs in the scope of where
+`reify` is called.
+
+```jldoctest
+@noeval begin
+    # will not error
+    not_used = not_defined + 1
+    a = 1
+    b = 2
+    c = 3
+    abc = sum([a,b,c])
+end
+c = -1
+reify(abc)
+# output
+-1
+```
+"""
+macro noeval(ex)
+    new = thunkify(ex, Unevaluated)
     esc(new)
 end
