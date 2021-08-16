@@ -80,6 +80,10 @@ function find_assigned_symbols_in_ast(ex)
                 # right hand of generator, first arg is the assignment
                 ignore_symbols = vcat(ignore_symbols, ex.args[2].args[1])
                 first, rest = _find_symbols_in_ast(ex)
+            elseif ex.head == :kw
+                # ignore keyword argument right side
+                push!(ignore_symbols, ex.args[1])
+                first, rest = _find_symbols_in_ast(ex.args[2])
             else
                 first, rest = _find_symbols_in_ast(ex)
             end

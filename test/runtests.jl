@@ -41,19 +41,23 @@ end
 end
 
 @testset "find assigned symbols in ast" begin
+    ex0 = :(collect(1:b; fakekeyword=1, fake=2))
+    symbols0 = Thunks.find_assigned_symbols_in_ast(ex0)
+    @test all([~in(x, symbols0) for x in [:fakekeyword, :fake]])
+
     ex = :([x[1:2] for x in repeat([repeat([a], 3)],3)])
     symbols = Thunks.find_assigned_symbols_in_ast(ex)
     @test all([x in symbols for x in [:a, :repeat]])
     @test (~)(:x in symbols)
-
+    
     ex2 = :(begin
         z = a + 3
-        y = collect(1:b)
+        y = collect(1:b, fakekeyword=1)
         abc = x -> rand(3,5)[2:3, 2:3]
     end)
     symbols2 = Thunks.find_assigned_symbols_in_ast(ex2)
     @test all([x in symbols2 for x in [:z, :a, :y, :b, :collect, :abc, :rand]])
-    @test (~)(:x in symbols2)
+    @test all([~in(x, symbols2) for x in [:x, :fakekeyword]])
 end
 
 
