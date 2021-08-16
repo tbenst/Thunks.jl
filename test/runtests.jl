@@ -44,12 +44,12 @@ end
     ex0 = :(collect(1:b; fakekeyword=1, fake=2))
     symbols0 = Thunks.find_assigned_symbols_in_ast(ex0)
     @test all([~in(x, symbols0) for x in [:fakekeyword, :fake]])
-
+    a = 3
     ex = :([x[1:2] for x in repeat([repeat([a], 3)],3)])
     symbols = Thunks.find_assigned_symbols_in_ast(ex)
     @test all([x in symbols for x in [:a, :repeat]])
     @test (~)(:x in symbols)
-    
+    b = 5
     ex2 = :(begin
         z = a + 3
         y = collect(1:b, fakekeyword=1)
