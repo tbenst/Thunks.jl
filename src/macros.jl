@@ -24,6 +24,7 @@ function find_symbols_in_ast(ex)
     return unique(symbols)
 end
 
+# https://docs.julialang.org/en/v1/base/base/#Keywords
 RESERVED = [
     :baremodule, :begin, :break, :catch, :const, :continue, :do, :else,
     :elseif, :end, :export, :false, :finally, :for, :function, :global, :if,
@@ -51,6 +52,7 @@ end
 We find all "assigned symbols", as in, everything except:
 - anonymous functions :((x,y,z) -> x*x).args[1]
 - generators :((x for x in 1:10))
+- Reserved keywords
 - ... others that we should catch...?
 """
 function find_assigned_symbols_in_ast(ex)
@@ -236,7 +238,7 @@ end
 c = -1
 reify(abc)
 # output
--1
+2
 ```
 """
 macro noeval(ex)
