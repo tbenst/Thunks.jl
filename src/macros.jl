@@ -273,7 +273,7 @@ undo(abc)
 reify(abc)
 @assert abc.evaluated == true
 # output
-2
+
 ```
 """
 macro reversible(ex)
