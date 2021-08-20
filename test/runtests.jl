@@ -182,4 +182,43 @@ end
     @test c.evaluated == true
 end
 
+function save_str(path)
+    (str) -> open(path, "w") do file
+            write(file, str)
+        end
+end
+
+function read_str(path)
+    () -> begin
+        if isfile(path)
+            open(path, "r") do file
+                read(file, String)
+            end
+        else
+            nothing
+        end
+    end
+end
+
+@testset "checkpoint" begin
+    path, _ = mktemp()
+    path *= ".txt"
+    @lazy begin
+        a = identity("hello")
+        b = identity("world")
+        c = "$a $b"
+    end
+    c = Checkpointable(c, save_str(path), read_str(path))
+    @test reify(c) == "hello world"
+    @test b.evaluated == true
+    @lazy begin
+        a = identity("hello")
+        b = identity("world")
+        c = "$a $b"
+    end
+    cc = Checkpointable(c, save_str(path), read_str(path))
+    @test reify(cc) == "hello world"
+    @test b.evaluated == false
+end
+
 end

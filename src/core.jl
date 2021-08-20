@@ -1,6 +1,6 @@
 "Abstract type for Thunks."
 abstract type Think end
-
+abstract type WrappedThink end
 """
     Thunk(function, args, kwargs)
 
@@ -48,6 +48,16 @@ mutable struct Reversible <: Think
     result::Any # cache result once computed
     Reversible(f, args) = new(f, args, Dict(), false, nothing)
     Reversible(f, args, kwargs) = new(f, args, kwargs, false, nothing)
+end
+
+"""
+A Thunk that can be checkpointed.
+"""
+mutable struct Checkpointable <: WrappedThink
+    wrapped_thunk::Think
+    checkpoint::Any # a function or callable that stores result
+    restore::Any # a function or callable that loade result
+    Checkpointable(t,c,r) = new(t,c,r)
 end
 
 function Base.getindex(self::Think, index)
@@ -112,6 +122,23 @@ function reify(thunk::Reversible)
     end
 end
 
+function reify(thunk::Checkpointable)
+    if thunk.wrapped_thunk.evaluated
+        return thunk.wrapped_thunk.result
+    end
+    value = nothing
+    try
+        value = thunk.restore()
+    catch
+    end
+    if ~isnothing(value)
+        return value
+    end
+    result = reify(thunk.wrapped_thunk)
+    thunk.checkpoint(result)
+    return result
+end
+
 function reify(value)
     value
 end
@@ -120,4 +147,11 @@ end
 function undo(thunk::Reversible)
     thunk.result = nothing
     thunk.evaluated = false
+    thunk
+end
+
+"Undo function call (non-recursively)"
+function undo(thunk::WrappedThink)
+    undo(thunk.wrapped_thunk)
+    thunk
 end
