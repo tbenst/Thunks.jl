@@ -131,6 +131,10 @@ function reify(thunk::Checkpointable)
     try
         value = reify(thunk.restore)()
     catch
+        for (exc, bt) in Base.catch_stack()
+            showerror(stdout, exc, bt)
+            println(stdout)
+        end
     end
     if ~isnothing(value)
         return value
