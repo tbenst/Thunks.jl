@@ -200,24 +200,46 @@ function read_str(path)
     end
 end
 
+function hello_world_thunk()
+    @lazy begin
+        a = identity("hello")
+        b = identity("world")
+        c = "$a $b"
+    end
+    a,b,c
+end
+
 @testset "checkpoint" begin
     path, _ = mktemp()
     path *= ".txt"
-    @lazy begin
-        a = identity("hello")
-        b = identity("world")
-        c = "$a $b"
-    end
+    a,b,c = hello_world_thunk()
     c = Checkpointable(c, save_str(path), read_str(path))
     @test reify(c) == "hello world"
     @test b.evaluated == true
+    
+    a,b,c = hello_world_thunk()
+    c = Checkpointable(c, save_str(path), read_str(path))
+    @test reify(c) == "hello world"
+    @test b.evaluated == false
+
+    p = @lazy mktemp()[1]*".txt"
+    a,b,c = hello_world_thunk()
     @lazy begin
-        a = identity("hello")
-        b = identity("world")
-        c = "$a $b"
+        ckpt_f = save_str(p)
+        restore_f = read_str(p)
     end
-    cc = Checkpointable(c, save_str(path), read_str(path))
-    @test reify(cc) == "hello world"
+    c = Checkpointable(c, ckpt_f, restore_f)
+    @test p.evaluated == false
+    @test reify(c) == "hello world"
+    @test p.evaluated == true
+
+    a,b,c = hello_world_thunk()
+    @lazy begin
+        ckpt_f = save_str(p)
+        restore_f = read_str(p)
+    end
+    c = Checkpointable(c, ckpt_f, restore_f)
+    @test reify(c) == "hello world"
     @test b.evaluated == false
 end
 

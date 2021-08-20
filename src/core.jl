@@ -55,8 +55,8 @@ A Thunk that can be checkpointed.
 """
 mutable struct Checkpointable <: WrappedThink
     wrapped_thunk::Think
-    checkpoint::Any # a function or callable that stores result
-    restore::Any # a function or callable that loade result
+    checkpoint::Any # store the result
+    restore::Any # load the result. ideally, no dependencies
     Checkpointable(t,c,r) = new(t,c,r)
 end
 
@@ -128,14 +128,14 @@ function reify(thunk::Checkpointable)
     end
     value = nothing
     try
-        value = thunk.restore()
+        value = reify(thunk.restore)()
     catch
     end
     if ~isnothing(value)
         return value
     end
     result = reify(thunk.wrapped_thunk)
-    thunk.checkpoint(result)
+    reify(thunk.checkpoint)(result)
     return result
 end
 
