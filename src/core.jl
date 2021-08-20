@@ -1,6 +1,6 @@
 "Abstract type for Thunks."
 abstract type Think end
-abstract type WrappedThink end
+abstract type WrappedThink <: Think end
 """
     Thunk(function, args, kwargs)
 
