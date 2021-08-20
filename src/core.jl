@@ -50,6 +50,13 @@ mutable struct Reversible <: Think
     Reversible(f, args, kwargs) = new(f, args, kwargs, false, nothing)
 end
 
+
+"No operation."
+function noop()
+    nothing
+end
+
+
 """
 A Thunk that can be checkpointed.
 """
