@@ -58,6 +58,7 @@ mutable struct Checkpointable <: WrappedThink
     checkpoint::Any # store the result
     restore::Any # load the result. ideally, no dependencies
     Checkpointable(t,c,r) = new(t,c,r)
+    Checkpointable(t,r) = new(t,noop,r)
 end
 
 function Base.getindex(self::Think, index)
