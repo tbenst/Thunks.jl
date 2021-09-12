@@ -62,7 +62,9 @@ A Thunk that can be checkpointed.
 """
 mutable struct Checkpointable <: WrappedThink
     wrapped_thunk::Think
-    checkpoint::Any # store the result
+    # function that takes value of wrapped_thunk, and stores the result, ie on disk
+    checkpoint::Any
+    # instead of evaluating wrapped_thunk, try restoring value from disk
     restore::Any # load the result. ideally, no dependencies
     Checkpointable(t,c,r) = new(t,c,r)
     Checkpointable(t,r) = new(t,noop,r)
@@ -89,13 +91,34 @@ In other words, compute the value of the expression.
 We walk through the thunk's arguments and keywords, recursively evaluating each one,
 and then evaluating the thunk's function with the evaluated arguments.
 """
+
+function set_result(thunk::WrappedThink)
+    set_result(thunk.wrapped_thunk)
+end
+
+function set_result(thunk::Think, result)
+    thunk.result = result
+    thunk.evaluated = true
+    # clear to allow garbage collection
+    thunk.args = []
+    thunk.kwargs = Dict()
+end
+
+function set_result(thunk::Reversible, result)
+    thunk.result = result
+    thunk.evaluated = true
+end
+
+
 function reify(thunk::Think)
     if thunk.evaluated
         return thunk.result
     else
         args = [reify(x) for x in thunk.args]
         kwargs = Dict(k => reify(v) for (k,v) in thunk.kwargs)
-        return eval_thunk(thunk, thunk.f, args, kwargs)
+        result = thunk.f(args...; kwargs...)
+        set_result(thunk, result)
+        return result
     end
 end
 
@@ -105,17 +128,10 @@ function reify(thunk::Unevaluated)
     else
         args = [reify(x) for x in thunk.args()]
         kwargs = Dict(k => reify(v) for (k,v) in thunk.kwargs())
-        return eval_thunk(thunk, thunk.f, args, kwargs)
+        result = thunk.f(args...; kwargs...)
+        set_result(thunk, result)
+        return result
     end
-end
-
-function eval_thunk(thunk, f, args, kwargs)
-        thunk.result = thunk.f(args...; kwargs...)
-        thunk.evaluated = true
-        # clear to allow garbage collection
-        thunk.args = []
-        thunk.kwargs = Dict()
-        return thunk.result
 end
 
 function reify(thunk::Reversible)
@@ -124,9 +140,9 @@ function reify(thunk::Reversible)
     else
         args = [reify(x) for x in thunk.args]
         kwargs = Dict(k => reify(v) for (k,v) in thunk.kwargs)
-        thunk.result = thunk.f(args...; kwargs...)
-        thunk.evaluated = true
-        return thunk.result
+        result = thunk.f(args...; kwargs...)
+        set_result(thunk, result)
+        return result
     end
 end
 
@@ -134,21 +150,23 @@ function reify(thunk::Checkpointable)
     if thunk.wrapped_thunk.evaluated
         return thunk.wrapped_thunk.result
     end
-    value = nothing
+    result = nothing
     try
-        value = reify(thunk.restore)()
+        result = reify(thunk.restore)
     catch
         for (exc, bt) in Base.catch_stack()
             showerror(stdout, exc, bt)
             println(stdout)
         end
     end
-    if ~isnothing(value)
-        return value
+    if ~isnothing(result)
+        set_result(thunk.wrapped_thunk, result)
+        return result
+    else
+        result = reify(thunk.wrapped_thunk)
+        reify(thunk.checkpoint)(result)
+        return result
     end
-    result = reify(thunk.wrapped_thunk)
-    reify(thunk.checkpoint)(result)
-    return result
 end
 
 function reify(value)

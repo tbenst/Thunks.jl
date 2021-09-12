@@ -189,14 +189,12 @@ function save_str(path)
 end
 
 function read_str(path)
-    () -> begin
-        if isfile(path)
-            open(path, "r") do file
-                read(file, String)
-            end
-        else
-            nothing
+    if isfile(path)
+        open(path, "r") do file
+            read(file, String)
         end
+    else
+        nothing
     end
 end
 
